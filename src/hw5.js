@@ -14,13 +14,65 @@ function degrees_to_radians(degrees)
   return degrees * (pi/180);
 }
 
-// Add here the rendering of your goal
+// Goal Skeleton Components
+
+// Goal Posts
+const goalPostGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 32);
+const goalPostMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const goalPost1 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
+const goalPost2 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
+
+// Position the goal posts
+goalPost1.position.set(-1.5, 1, 0);
+goalPost2.position.set(1.5, 1, 0);
+scene.add(goalPost1);
+scene.add(goalPost2);
+
+// Crossbar
+const crossbarGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 32);
+const crossbar = new THREE.Mesh(crossbarGeometry, goalPostMaterial);
+
+// Rotate and position the crossbar
+crossbar.rotation.z = degrees_to_radians(90);
+crossbar.position.set(0, 2, 0);
+scene.add(crossbar);
+
+// Back Supports
+const backSupportGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 32);
+const backSupport1 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
+const backSupport2 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
+
+// Rotate and position the back supports
+backSupport1.rotation.x = degrees_to_radians(45);
+backSupport1.position.set(-1.5, 0, -1.5);
+backSupport2.rotation.x = degrees_to_radians(45);
+backSupport2.position.set(1.5, 0, -1.5);
+scene.add(backSupport1);
+scene.add(backSupport2);
+
+// Toruses at the ends of goalposts and back supports
+const torusGeometry = new THREE.TorusGeometry(0.1, 0.03, 16, 100);
+const torusMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const torus1 = new THREE.Mesh(torusGeometry, torusMaterial);
+const torus2 = new THREE.Mesh(torusGeometry, torusMaterial);
+const torus3 = new THREE.Mesh(torusGeometry, torusMaterial);
+const torus4 = new THREE.Mesh(torusGeometry, torusMaterial);
+
+// Position the toruses
+torus1.position.set(-1.5, 2, 0);
+torus2.position.set(1.5, 2, 0);
+torus3.position.set(-1.5, 0, -1.5);
+torus4.position.set(1.5, 0, -1.5);
+scene.add(torus1);
+scene.add(torus2);
+scene.add(torus3);
+scene.add(torus4);
 
 // This is a sample box.
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( {color: 0x000000} );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+const geometry = new THREE.SphereGeometry(1, 32, 32);
+const material = new THREE.MeshBasicMaterial({ color: 'Red' });
+const sphere = new THREE.Mesh(geometry, material);
+scene.add(sphere);
 
 
 // This defines the initial distance of the camera
@@ -41,6 +93,22 @@ const toggleOrbit = (e) => {
 }
 
 document.addEventListener('keydown',toggleOrbit)
+
+// Implementing wireframe toggle
+let isWireframeEnabled = false;
+
+const toggleWireframe = (e) => {
+	if (e.key == 'w') {
+	  isWireframeEnabled = !isWireframeEnabled;
+	  scene.traverse((child) => {
+		if (child.isMesh) {
+		  child.material.wireframe = isWireframeEnabled;
+		}
+	  });
+	}
+  };
+
+document.addEventListener('keydown', toggleWireframe);
 
 //controls.update() must be called after any manual changes to the camera's transform
 controls.update();
