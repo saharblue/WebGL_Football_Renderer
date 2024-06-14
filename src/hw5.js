@@ -1,4 +1,6 @@
 import {OrbitControls} from './OrbitControls.js'
+//import { AxesHelper } from 'three'; // Make sure you import AxesHelper if using modules
+
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -7,6 +9,10 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 scene.background = new THREE.Color( 'ForestGreen' );
+
+// Add AxesHelper to visualize the coordinate system
+const axesHelper = new THREE.AxesHelper(5); // The parameter is the length of the axes
+scene.add(axesHelper);
 
 function degrees_to_radians(degrees)
 {
@@ -17,7 +23,7 @@ function degrees_to_radians(degrees)
 // Goal Skeleton Components
 
 // Goal Posts
-const goalPostGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 32);
+const goalPostGeometry = new THREE.CylinderGeometry(0.1, 0.1, 4, 32);
 const goalPostMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 const goalPost1 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
 const goalPost2 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
@@ -38,15 +44,15 @@ crossbar.position.set(0, 2, 0);
 scene.add(crossbar);
 
 // Back Supports
-const backSupportGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 32);
+const backSupportGeometry = new THREE.CylinderGeometry(0.1, 0.1, 5, 32);
 const backSupport1 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
 const backSupport2 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
 
 // Rotate and position the back supports
 backSupport1.rotation.x = degrees_to_radians(45);
-backSupport1.position.set(-1.5, 0, -1.5);
+backSupport1.position.set(-1.5, 1, -1.8);
 backSupport2.rotation.x = degrees_to_radians(45);
-backSupport2.position.set(1.5, 0, -1.5);
+backSupport2.position.set(1.5, 1, -1.8);
 scene.add(backSupport1);
 scene.add(backSupport2);
 
@@ -68,7 +74,7 @@ scene.add(torus2);
 scene.add(torus3);
 scene.add(torus4);
 
-// This is a sample box.
+// This is a sphere.
 const geometry = new THREE.SphereGeometry(1, 32, 32);
 const material = new THREE.MeshBasicMaterial({ color: 'Black' });
 const sphere = new THREE.Mesh(geometry, material);
