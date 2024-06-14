@@ -17,7 +17,6 @@ class ThreeDScene {
 
         this.goalObject = new THREE.Object3D();
         this.initGoal();
-        this.initFlag();
         this.initBall();
 		this.initCameraPosition();
 
