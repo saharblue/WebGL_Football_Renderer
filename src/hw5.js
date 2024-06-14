@@ -70,7 +70,7 @@ scene.add(torus4);
 
 // This is a sample box.
 const geometry = new THREE.SphereGeometry(1, 32, 32);
-const material = new THREE.MeshBasicMaterial({ color: 'Red' });
+const material = new THREE.MeshBasicMaterial({ color: 'Black' });
 const sphere = new THREE.Mesh(geometry, material);
 scene.add(sphere);
 
