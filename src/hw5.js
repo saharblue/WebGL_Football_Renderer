@@ -1,132 +1,254 @@
-import {OrbitControls} from './OrbitControls.js'
-//import { AxesHelper } from 'three'; // Make sure you import AxesHelper if using modules
+import { OrbitControls } from './OrbitControls.js';
 
+class ThreeDScene {
+    constructor() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.renderer = new THREE.WebGLRenderer();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(this.renderer.domElement);
+        this.scene.background = new THREE.Color('ForestGreen');
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.isOrbitEnabled = true;
+        this.animationXEnabled = false;
+        this.animationYEnabled = false;
+        this.speedFactor = 1;
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
-scene.background = new THREE.Color( 'ForestGreen' );
+        this.goalObject = new THREE.Object3D();
+        this.initGoal();
+        this.initFlag();
+        this.initBall();
+		this.initCameraPosition();
 
-// Add AxesHelper to visualize the coordinate system
-const axesHelper = new THREE.AxesHelper(5); // The parameter is the length of the axes
-scene.add(axesHelper);
+        this.controls.update();
 
-function degrees_to_radians(degrees)
-{
-  var pi = Math.PI;
-  return degrees * (pi/180);
-}
+        document.addEventListener('keydown', this.toggleOrbit.bind(this));
+        document.addEventListener('keydown', this.handleKeyPress.bind(this));
 
-// Goal Skeleton Components
+        this.animate();
+    }
 
-// Goal Posts
-const goalPostGeometry = new THREE.CylinderGeometry(0.1, 0.1, 4, 32);
-const goalPostMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const goalPost1 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
-const goalPost2 = new THREE.Mesh(goalPostGeometry, goalPostMaterial);
+    degreesToRadians(degrees) {
+        return degrees * (Math.PI / 180);
+    }
 
-// Position the goal posts
-goalPost1.position.set(-1.5, 1, 0);
-goalPost2.position.set(1.5, 1, 0);
-scene.add(goalPost1);
-scene.add(goalPost2);
-
-// Crossbar
-const crossbarGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 32);
-const crossbar = new THREE.Mesh(crossbarGeometry, goalPostMaterial);
-
-// Rotate and position the crossbar
-crossbar.rotation.z = degrees_to_radians(90);
-crossbar.position.set(0, 2, 0);
-scene.add(crossbar);
-
-// Back Supports
-const backSupportGeometry = new THREE.CylinderGeometry(0.1, 0.1, 5, 32);
-const backSupport1 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
-const backSupport2 = new THREE.Mesh(backSupportGeometry, goalPostMaterial);
-
-// Rotate and position the back supports
-backSupport1.rotation.x = degrees_to_radians(45);
-backSupport1.position.set(-1.5, 1, -1.8);
-backSupport2.rotation.x = degrees_to_radians(45);
-backSupport2.position.set(1.5, 1, -1.8);
-scene.add(backSupport1);
-scene.add(backSupport2);
-
-// Toruses at the ends of goalposts and back supports
-const torusGeometry = new THREE.TorusGeometry(0.1, 0.03, 16, 100);
-const torusMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const torus1 = new THREE.Mesh(torusGeometry, torusMaterial);
-const torus2 = new THREE.Mesh(torusGeometry, torusMaterial);
-const torus3 = new THREE.Mesh(torusGeometry, torusMaterial);
-const torus4 = new THREE.Mesh(torusGeometry, torusMaterial);
-
-// Position the toruses
-torus1.position.set(-1.5, 2, 0);
-torus2.position.set(1.5, 2, 0);
-torus3.position.set(-1.5, 0, -1.5);
-torus4.position.set(1.5, 0, -1.5);
-scene.add(torus1);
-scene.add(torus2);
-scene.add(torus3);
-scene.add(torus4);
-
-// This is a sphere.
-const geometry = new THREE.SphereGeometry(1, 32, 32);
-const material = new THREE.MeshBasicMaterial({ color: 'Black' });
-const sphere = new THREE.Mesh(geometry, material);
-scene.add(sphere);
-
-
-// This defines the initial distance of the camera
-const cameraTranslate = new THREE.Matrix4();
-cameraTranslate.makeTranslation(0,0,5);
-camera.applyMatrix4(cameraTranslate)
-
-renderer.render( scene, camera );
-
-const controls = new OrbitControls( camera, renderer.domElement );
-
-let isOrbitEnabled = true;
-
-const toggleOrbit = (e) => {
-	if (e.key == "o"){
-		isOrbitEnabled = !isOrbitEnabled;
+	initCameraPosition() {
+		const cameraMatrix = new THREE.Matrix4();
+		cameraMatrix.makeTranslation(0, 0, 150);
+		this.camera.applyMatrix4(cameraMatrix);
 	}
-}
 
-document.addEventListener('keydown',toggleOrbit)
+    initGoal() {
+        const scaleMatrix = new THREE.Matrix4();
+        scaleMatrix.makeScale(0.95, 0.95, 0.95);
+        this.shrinkMatrix = scaleMatrix;
 
-// Implementing wireframe toggle
-let isWireframeEnabled = false;
+        const createPost = (translationX) => {
+            const postMatrix = new THREE.Matrix4();
+            postMatrix.makeTranslation(translationX, 0, 0);
+            const postGeometry = new THREE.CylinderGeometry(1, 1, 40, 15);
+            const postMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.applyMatrix4(postMatrix);
+            return post;
+        };
 
-const toggleWireframe = (e) => {
-	if (e.key == 'w') {
-	  isWireframeEnabled = !isWireframeEnabled;
-	  scene.traverse((child) => {
-		if (child.isMesh) {
-		  child.material.wireframe = isWireframeEnabled;
-		}
-	  });
+        const createBackSupport = (translationX) => {
+            const supportMatrix = new THREE.Matrix4();
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationX(this.degreesToRadians(30));
+            supportMatrix.makeTranslation(translationX, 0, -11.547);
+            supportMatrix.multiply(rotationMatrix);
+            const supportGeometry = new THREE.CylinderGeometry(1, 1, 46.188, 15);
+            const supportMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
+            const support = new THREE.Mesh(supportGeometry, supportMaterial);
+            support.applyMatrix4(supportMatrix);
+            return support;
+        };
+
+        const createCrossbar = () => {
+            const crossbarMatrix = new THREE.Matrix4();
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationZ(this.degreesToRadians(90));
+            crossbarMatrix.makeTranslation(0, 19.5, 0);
+            crossbarMatrix.multiply(rotationMatrix);
+            const crossbarGeometry = new THREE.CylinderGeometry(1, 1, 120, 15);
+            const crossbarMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
+            const crossbar = new THREE.Mesh(crossbarGeometry, crossbarMaterial);
+            crossbar.applyMatrix4(crossbarMatrix);
+            return crossbar;
+        };
+
+        const createBackNet = () => {
+            const backNetMatrix = new THREE.Matrix4();
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationX(this.degreesToRadians(30));
+            backNetMatrix.makeTranslation(0, 0, -11.547);
+            backNetMatrix.multiply(rotationMatrix);
+            const backNetGeometry = new THREE.PlaneGeometry(120, 46.188);
+            const backNetMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey', side: THREE.DoubleSide });
+            const backNet = new THREE.Mesh(backNetGeometry, backNetMaterial);
+            backNet.applyMatrix4(backNetMatrix);
+            return backNet;
+        };
+
+        const createTriangleNet = (translationX) => {
+            const triangleShape = new THREE.Shape();
+            triangleShape.moveTo(0, 0);
+            triangleShape.lineTo(0, 40);
+            triangleShape.lineTo(23.094, 0);
+            triangleShape.lineTo(0, 0);
+
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationY(this.degreesToRadians(90));
+
+            const triangleMatrix = new THREE.Matrix4();
+            triangleMatrix.makeTranslation(translationX, -20, 0);
+            triangleMatrix.multiply(rotationMatrix);
+
+            const triangleGeometry = new THREE.ShapeGeometry(triangleShape);
+            const triangleMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey', side: THREE.DoubleSide });
+            const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+            triangle.applyMatrix4(triangleMatrix);
+            return triangle;
+        };
+
+        const createRing = (rotationX, translationY, target) => {
+            const ringMatrix = new THREE.Matrix4();
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationX(this.degreesToRadians(rotationX));
+            ringMatrix.makeTranslation(0, translationY, 0);
+            ringMatrix.multiply(rotationMatrix);
+
+            const ringGeometry = new THREE.TorusGeometry(1, 1, 15, 40);
+            const ringMaterial = new THREE.MeshBasicMaterial({ color: 'white', side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.applyMatrix4(ringMatrix);
+            target.add(ring);
+        };
+
+        const post1 = createPost(59.5);
+        const post2 = createPost(-59.5);
+        const crossbar = createCrossbar();
+        const backSupport1 = createBackSupport(59.5);
+        const backSupport2 = createBackSupport(-59.5);
+        const backNet = createBackNet();
+        const triangleNet1 = createTriangleNet(-59.5);
+        const triangleNet2 = createTriangleNet(59.5);
+
+        this.goalObject.add(post1);
+        this.goalObject.add(post2);
+        this.goalObject.add(crossbar);
+        this.goalObject.add(backSupport1);
+        this.goalObject.add(backSupport2);
+        this.goalObject.add(backNet);
+        this.goalObject.add(triangleNet1);
+        this.goalObject.add(triangleNet2);
+
+        createRing(90, -20, post1);
+        createRing(90, -20, post2);
+        createRing(60, -23.094, backSupport1);
+        createRing(60, -23.094, backSupport2);
+
+        this.scene.add(this.goalObject);
+    }
+
+	initFlag() {
+		const flagMatrix = new THREE.Matrix4();
+		flagMatrix.makeTranslation(0, 30, 0);
+	
+		const textureLoader = new THREE.TextureLoader();
+		const flagTexture = textureLoader.load('https://as1.ftcdn.net/v2/jpg/04/17/82/34/1000_F_417823457_gKgmxNcs0cKtZjv0fcfoG0ZLy3gXMdAt.jpg');
+		const flagMaterial = new THREE.MeshBasicMaterial({ map: flagTexture, side: THREE.DoubleSide });
+		const flagGeometry = new THREE.PlaneGeometry(120, 20);
+		const flag = new THREE.Mesh(flagGeometry, flagMaterial);
+		flag.applyMatrix4(flagMatrix);
+	
+		this.goalObject.add(flag);
 	}
-  };
+	
 
-document.addEventListener('keydown', toggleWireframe);
+    initBall() {
+        const ballMatrix = new THREE.Matrix4();
+        ballMatrix.makeTranslation(0, 0, 40);
+        const ballGeometry = new THREE.SphereGeometry(2.5, 30, 15);
+        const ballMaterial = new THREE.MeshBasicMaterial({ color: 'black' });
+        this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        this.ball.applyMatrix4(ballMatrix);
+        this.scene.add(this.ball);
+    }
 
-//controls.update() must be called after any manual changes to the camera's transform
-controls.update();
+    toggleWireframe() {
+        this.goalObject.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.material.wireframe = !child.material.wireframe;
+            }
+        });
+        this.ball.material.wireframe = !this.ball.material.wireframe;
+    }
 
-function animate() {
+    toggleOrbit(event) {
+        if (event.key === 'o') {
+            this.isOrbitEnabled = !this.isOrbitEnabled;
+        }
+    }
 
-	requestAnimationFrame( animate );
+    handleKeyPress(event) {
+        switch (event.key) {
+            case 'w':
+                this.toggleWireframe();
+                break;
+            case '+':
+            case 'ArrowUp':
+                this.speedFactor *= 1.1;
+                break;
+            case '-':
+            case 'ArrowDown':
+                this.speedFactor *= 0.9;
+                break;
+            case '1':
+                this.animationXEnabled = !this.animationXEnabled;
+                break;
+            case '2':
+                this.animationYEnabled = !this.animationYEnabled;
+                break;
+            case '3':
+                this.goalObject.applyMatrix4(this.shrinkMatrix);
+                break;
+        }
+    }
 
-	controls.enabled = isOrbitEnabled;
-	controls.update();
+    animate() {
+        requestAnimationFrame(this.animate.bind(this));
 
-	renderer.render( scene, camera );
+        this.controls.enabled = this.isOrbitEnabled;
+        this.animateBall();
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
 
+    animateBall() {
+        if (this.animationXEnabled) {
+            this.ball.applyMatrix4(this.createRotationMatrix('x', this.speedFactor));
+        }
+        if (this.animationYEnabled) {
+            this.ball.applyMatrix4(this.createRotationMatrix('y', this.speedFactor));
+        }
+    }
+
+    createRotationMatrix(axis, angle) {
+        const rotationMatrix = new THREE.Matrix4();
+        switch (axis) {
+            case 'x':
+                rotationMatrix.makeRotationX(this.degreesToRadians(angle));
+                break;
+            case 'y':
+                rotationMatrix.makeRotationY(this.degreesToRadians(angle));
+                break;
+        }
+        return rotationMatrix;
+    }
 }
-animate()
+
+new ThreeDScene();
